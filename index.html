@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1e40af">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Laporan Harian</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f3f4f6; color: #111827;
+    font-size: 14px; line-height: 1.4;
+  }
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: #fff; padding: 12px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+  header .sub { font-size: 11px; opacity: .85; margin-top: 2px; }
+  nav {
+    display: flex; gap: 4px;
+    background: #fff; padding: 6px;
+    border-bottom: 1px solid #e5e7eb;
+    overflow-x: auto;
+    position: sticky; top: 56px; z-index: 99;
+  }
+  nav button {
+    flex: 1; min-width: 70px;
+    padding: 10px 8px; font-size: 12px;
+    border: none; border-radius: 6px;
+    background: transparent; color: #374151;
+    cursor: pointer; font-weight: 500;
+    white-space: nowrap;
+    transition: all .15s;
+  }
+  nav button.active { background: #1e40af; color: #fff; }
+  nav button:active { transform: scale(.96); }
+
+  main { padding: 12px; padding-bottom: 80px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .card {
+    background: #fff; border-radius: 10px;
+    padding: 14px; margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .card h2 { margin: 0 0 10px; font-size: 14px; color: #1e40af; }
+
+  .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 0; }
+
+  label { display: block; font-size: 11px; color: #6b7280; margin-bottom: 3px; font-weight: 500; }
+  input, select, textarea, button {
+    font-family: inherit; font-size: 14px;
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #d1d5db; border-radius: 7px;
+    background: #fff; color: #111827;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  button {
+    cursor: pointer; font-weight: 600;
+    border: none; transition: all .15s;
+  }
+  button:active { transform: scale(.97); }
+  .btn-primary { background: #1e40af; color: #fff; }
+  .btn-success { background: #059669; color: #fff; }
+  .btn-danger { background: #dc2626; color: #fff; }
+  .btn-secondary { background: #6b7280; color: #fff; }
+  .btn-warn { background: #d97706; color: #fff; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; flex-shrink: 0; }
+
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stat {
+    background: #fff; border-radius: 10px; padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    text-align: center;
+  }
+  .stat .v { font-size: 20px; font-weight: 700; color: #1e40af; }
+  .stat .l { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { padding: 6px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+  th { background: #f9fafb; font-weight: 600; color: #374151; font-size: 11px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr 90px 36px;
+    gap: 6px; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid #f3f4f6;
+  }
+  .item-row .name { font-size: 13px; }
+  .item-row input { padding: 7px 8px; font-size: 13px; text-align: right; }
+  .item-row .del { background: #fee2e2; color: #dc2626; padding: 6px; border-radius: 6px; }
+
+  .project-block {
+    background: #f9fafb; border-radius: 8px; padding: 10px;
+    margin-bottom: 10px; border-left: 3px solid #3b82f6;
+  }
+  .project-block.non-op { border-left-color: #f59e0b; background: #fffbeb; }
+  .project-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px; gap: 8px;
+  }
+  .project-header strong { font-size: 13px; color: #1e40af; }
+  .project-header .total { font-size: 11px; color: #6b7280; }
+
+  .toast {
+    position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+    background: #111827; color: #fff;
+    padding: 10px 18px; border-radius: 24px; font-size: 13px;
+    opacity: 0; transition: opacity .3s; z-index: 200;
+    pointer-events: none; max-width: 90%;
+  }
+  .toast.show { opacity: .95; }
+  .toast.error { background: #dc2626; }
+  .toast.success { background: #059669; }
+
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    display: none; align-items: flex-end; justify-content: center;
+    z-index: 300;
+  }
+  .modal.show { display: flex; }
+  .modal-content {
+    background: #fff; border-radius: 14px 14px 0 0;
+    width: 100%; max-width: 500px; max-height: 85vh;
+    overflow-y: auto; padding: 16px;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal h3 { margin: 0 0 12px; font-size: 16px; }
+
+  .day-tabs {
+    display: flex; gap: 4px; overflow-x: auto;
+    padding: 6px 0; margin: -4px -4px 10px; padding-left: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .day-tabs button {
+    flex: 0 0 auto;
+    width: 44px; padding: 8px 4px;
+    font-size: 12px; border-radius: 8px;
+    background: #fff; color: #374151;
+    border: 1px solid #e5e7eb;
+  }
+  .day-tabs button.active {
+    background: #1e40af; color: #fff; border-color: #1e40af;
+  }
+  .day-tabs button.has-data { border-color: #059669; }
+  .day-tabs button.has-data.active { background: #059669; border-color: #059669; }
+  .day-tabs button.weekend { color: #dc2626; }
+  .day-tabs button.weekend.active { color: #fff; }
+
+  .summary-bar {
+    display: flex; justify-content: space-between;
+    background: #eff6ff; padding: 10px;
+    border-radius: 8px; margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .summary-bar .item { text-align: center; flex: 1; }
+  .summary-bar .v { font-weight: 700; color: #1e40af; }
+  .summary-bar .l { font-size: 10px; color: #6b7280; }
+
+  .target-box {
+    background: #f9fafb; border-radius: 8px; padding: 10px;
+    border: 1px solid #e5e7eb;
+  }
+  .target-row { margin-bottom: 8px; }
+  .target-row select, .target-row input {
+    font-size: 13px; padding: 7px 8px;
+  }
+  .target-status {
+    font-size: 12px; font-weight: 600; padding: 8px;
+    text-align: center; border-radius: 6px;
+    margin-bottom: 6px;
+  }
+  .target-status.under { background: #fef3c7; color: #92400e; }
+  .target-status.over  { background: #dbeafe; color: #1e40af; }
+  .target-status.exact { background: #d1fae5; color: #065f46; }
+  .target-status.empty { background: #f3f4f6; color: #6b7280; }
+  .target-bar {
+    width: 100%; height: 8px;
+    background: #e5e7eb; border-radius: 4px;
+    overflow: hidden;
+  }
+  .target-fill {
+    height: 100%; background: #3b82f6;
+    transition: width .3s, background .3s;
+    border-radius: 4px;
+  }
+  .target-fill.under  { background: #f59e0b; }
+  .target-fill.exact  { background: #10b981; }
+  .target-fill.over   { background: #3b82f6; }
+
+  .bottom-actions {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff; padding: 10px;
+    border-top: 1px solid #e5e7eb;
+    display: flex; gap: 6px; z-index: 90;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+  }
+  .bottom-actions button { padding: 11px 8px; font-size: 13px; }
+
+  .empty {
+    text-align: center; padding: 30px 16px;
+    color: #6b7280; font-size: 13px;
+  }
+  .small { font-size: 11px; color: #6b7280; }
+  .badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 12px; font-size: 10px; font-weight: 600;
+    background: #dbeafe; color: #1e40af;
+  }
+  .badge.warn { background: #fef3c7; color: #92400e; }
+  .badge.danger { background: #fee2e2; color: #991b1b; }
+  .badge.success { background: #d1fae5; color: #065f46; }
+
+  .file-input {
+    display: none;
+  }
+  .file-label {
+    display: block; padding: 10px; text-align: center;
+    background: #eff6ff; color: #1e40af;
+    border: 2px dashed #3b82f6; border-radius: 8px;
+    cursor: pointer; font-weight: 500;
+  }
+
+  details { margin-bottom: 8px; }
+  details summary {
+    cursor: pointer; padding: 8px 0;
+    font-weight: 600; color: #1e40af;
+    user-select: none;
+  }
+  details[open] summary { margin-bottom: 8px; }
+
+  .quick-fill {
+    display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0;
+  }
+  .quick-fill button {
+    flex: 0 0 auto; padding: 4px 10px;
+    font-size: 11px; background: #e5e7eb; color: #374151;
+    border-radius: 12px;
+  }
+
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 12px 0; }
+
+  @media (min-width: 768px) {
+    main { max-width: 800px; margin: 0 auto; }
+    nav { max-width: 800px; margin: 0 auto; }
+    .stat-grid { grid-template-columns: repeat(4, 1fr); }
+    .bottom-actions { max-width: 800px; left: 50%; transform: translateX(-50%); border-radius: 10px 10px 0 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📋 Laporan Harian Programmer</h1>
+  <div class="sub" id="headerSub">Belum ada data</div>
+</header>
+
+<nav>
+  <button class="active" data-page="input">📝 Input</button>
+  <button data-page="resume">📊 Resume</button>
+  <button data-page="settings">⚙️ Setting</button>
+  <button data-page="data">💾 Data</button>
+</nav>
+
+<main>
+
+  <!-- ============== INPUT PAGE ============== -->
+  <section class="page active" id="page-input">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Bulan / Tahun</label>
+          <input type="month" id="periodInput">
+        </div>
+        <div>
+          <label>Normal Working Time (menit)</label>
+          <input type="number" id="nwtInput" value="480" min="60" max="720">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📅 Pilih Tanggal</h2>
+      <div class="day-tabs" id="dayTabs"></div>
+      <div class="summary-bar">
+        <div class="item"><div class="v" id="dayOp">0</div><div class="l">Operasi (mnt)</div></div>
+        <div class="item"><div class="v" id="dayNonOp">0</div><div class="l">Non-Op (mnt)</div></div>
+        <div class="item"><div class="v" id="dayTotal">0</div><div class="l">Total (mnt)</div></div>
+        <div class="item"><div class="v" id="dayRatio">0%</div><div class="l">Ratio</div></div>
+      </div>
+
+      <!-- Target indicator -->
+      <div class="target-box" id="targetBox">
+        <div class="target-row">
+          <div>
+            <label style="margin:0;">🎯 Target Hari Ini</label>
+            <select id="targetSelect" onchange="onTargetChange()">
+              <option value="480">Reguler — pulang 17:10 (480 menit / 8 jam)</option>
+              <option value="580">Lembur 1 jam — pulang 18:10 (580 menit)</option>
+              <option value="660">Lembur 3 jam — pulang 20:00 (660 menit)</option>
+              <option value="420">Weekend — 7 jam (420 menit)</option>
+              <option value="custom">Custom...</option>
+            </select>
+          </div>
+        </div>
+        <div class="target-row" id="customTargetRow" style="display:none;">
+          <input type="number" id="customTarget" placeholder="Target menit custom" min="0" step="15" oninput="onCustomTargetChange()">
+        </div>
+        <div class="target-status" id="targetStatus">Isi data dulu untuk melihat indikator</div>
+        <div class="target-bar"><div class="target-fill" id="targetFill"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⚡ Aksi Cepat</h2>
+      <div class="row" style="gap:6px;">
+        <button class="btn-secondary btn-sm" onclick="copyFromYesterday()">📋 Sama Seperti Kemarin</button>
+        <button class="btn-secondary btn-sm" onclick="copyFromYesterday(true)">📋+ Kemarin (struktur saja)</button>
+      </div>
+      <div class="small" style="margin-top:6px;">📋 = copy semua angka dari hari kerja sebelumnya. 📋+ = copy daftar project saja, angka kosong.</div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h2 style="margin:0;">🔧 Operation</h2>
+        <button class="btn-primary btn-sm" onclick="openProjectPicker('op')">+ Project</button>
+      </div>
+      <div id="opProjects"></div>
+      <div id="opEmpty" class="empty" style="display:none;">Belum ada project. Tap "+ Project" untuk menambah.</div>
+    </div>
+
+    <div class="card">
+      <h2>☕ Non-Operation</h2>
+      <div id="nonOpItems"></div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Paraf Leader</label>
+          <input type="text" id="parafLeader" placeholder="Nama leader">
+        </div>
+        <div>
+          <label>Paraf Foreman</label>
+          <input type="text" id="parafForeman" placeholder="Nama foreman">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Catatan / Cuti / Sakit</label>
+          <input type="text" id="dayNote" placeholder="Opsional">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== RESUME PAGE ============== -->
+  <section class="page" id="page-resume">
+    <div class="card">
+      <h2>📊 Resume Bulanan</h2>
+      <div id="resumeHeader"></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="v" id="rTotalOp">0</div><div class="l">Total Operasi (jam)</div></div>
+      <div class="stat"><div class="v" id="rTotalNonOp">0</div><div class="l">Non-Operasi (jam)</div></div>
+      <div class="stat"><div class="v" id="rTotalAll">0</div><div class="l">Total Jam Kerja</div></div>
+      <div class="stat"><div class="v" id="rRatio">0%</div><div class="l">Operation Ratio</div></div>
+    </div>
+
+    <div class="card">
+      <h2>📌 Per Project (Operation)</h2>
+      <table id="projectTable">
+        <thead><tr><th>Project</th><th class="num">Menit</th><th class="num">Jam</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>☕ Non-Operation Detail</h2>
+      <table id="nonOpTable">
+        <thead><tr><th>Item</th><th class="num">Menit</th><th class="num">Jam</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>📅 Per Hari</h2>
+      <table id="dailyTable">
+        <thead><tr><th>Tgl</th><th class="num">Op</th><th class="num">Non</th><th class="num">Total</th><th>Ratio</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============== SETTINGS PAGE ============== -->
+  <section class="page" id="page-settings">
+    <div class="card">
+      <h2>👤 Profil</h2>
+      <div class="row">
+        <div>
+          <label>Nama</label>
+          <input type="text" id="profName">
+        </div>
+        <div>
+          <label>NPK</label>
+          <input type="text" id="profNpk">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveProfile()">💾 Simpan Profil</button>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>📋 Master Project (Operation)</summary>
+        <div id="masterProjectList"></div>
+        <hr>
+        <div class="row">
+          <input type="text" id="newProjNumber" placeholder="Project Number (mis. 5502-M046)">
+        </div>
+        <div class="row">
+          <input type="text" id="newProjName" placeholder="Project Name">
+        </div>
+        <button class="btn-primary btn-sm" onclick="addMasterProject()">+ Tambah Project</button>
+      </details>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>🔧 Item Operation (per project)</summary>
+        <p class="small">Item pekerjaan yang muncul untuk setiap project Operation</p>
+        <div id="opItemList"></div>
+        <hr>
+        <div class="row">
+          <input type="text" id="newOpItem" placeholder="Item baru (mis. Coding)">
+          <button class="btn-primary btn-sm" style="flex:0 0 auto;" onclick="addOpItem()">+ Tambah</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>☕ Item Non-Operation</summary>
+        <div id="nonOpItemList"></div>
+        <hr>
+        <div class="row">
+          <input type="text" id="newNonOpItem" placeholder="Item baru">
+          <button class="btn-primary btn-sm" style="flex:0 0 auto;" onclick="addNonOpItem()">+ Tambah</button>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============== DATA PAGE ============== -->
+  <section class="page" id="page-data">
+    <div class="card">
+      <h2>📤 Export</h2>
+      <p class="small">Bulan aktif: <span id="dataPeriod">-</span></p>
+      <div class="row">
+        <button class="btn-primary" onclick="exportPDF()">📄 PDF</button>
+        <button class="btn-success" onclick="exportXLSX()">📊 Excel</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button class="btn-secondary" onclick="exportCSV()">💾 CSV (Database)</button>
+        <button class="btn-secondary" onclick="exportTXT()">📝 TXT (Backup)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📥 Import / Restore</h2>
+      <p class="small">Restore data dari file CSV / TXT yang pernah di-export</p>
+      <label class="file-label" for="importFile">📁 Pilih File CSV / TXT</label>
+      <input type="file" id="importFile" class="file-input" accept=".csv,.txt,.json" onchange="importData(event)">
+    </div>
+
+    <div class="card">
+      <h2>🗂️ Daftar Bulan Tersimpan</h2>
+      <div id="periodList"></div>
+    </div>
+
+    <div class="card">
+      <h2>⚠️ Reset</h2>
+      <button class="btn-danger" onclick="resetCurrentMonth()">🗑️ Hapus Data Bulan Ini</button>
+      <button class="btn-danger" style="margin-top:6px;" onclick="resetAll()">🧨 Hapus Semua Data</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="bottom-actions">
+  <button class="btn-success" onclick="saveCurrentDay()">💾 Simpan Hari Ini</button>
+  <button class="btn-primary" onclick="switchPage('resume')">📊 Resume</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal: Pilih Project -->
+<div class="modal" id="projectModal">
+  <div class="modal-content">
+    <h3>Pilih Project</h3>
+    <input type="text" id="projectSearch" placeholder="🔍 Cari project..." oninput="renderProjectPicker()">
+    <div id="projectPickerList" style="margin-top:10px; max-height:50vh; overflow-y:auto;"></div>
+    <hr>
+    <button class="btn-secondary" onclick="closeModal('projectModal')">Tutup</button>
+  </div>
+</div>
+
+<!-- Libraries (lokal, tidak perlu internet setelah di-cache) -->
+<script src="lib/xlsx-mini.js"></script>
+<script src="lib/pdf-print.js"></script>
+
+<script src="app.js"></script>
+</body>
+</html>

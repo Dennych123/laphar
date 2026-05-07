@@ -1,0 +1,5 @@
+# GitHub Pages config
+# Bypass Jekyll agar semua file diserve apa adanya
+plugins: []
+include:
+  - lib/
