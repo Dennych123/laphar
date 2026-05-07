@@ -966,57 +966,15 @@ function parseCSVLine(line) {
   return out;
 }
 
-// ---------- EXPORT: XLSX (pakai XlsxMini - lib/xlsx-mini.js) ----------
+// ---------- EXPORT: XLSX (pakai XlsxMini.buildLaporan - lib/xlsx-mini.js) ----------
 function exportXLSX() {
   try {
-    const m = ensureMonth(currentPeriod);
-    const td = daysInMonth(currentPeriod);
-
-    // Sheet 1: Resume Project
-    const pTotals = {};
-    Object.values(m.days).forEach(day => day.operations.forEach(p => {
-      const s = Object.values(p.items).reduce((a, b) => a + (Number(b) || 0), 0);
-      if (!pTotals[p.projectName]) pTotals[p.projectName] = { number: p.projectNumber || "", total: 0 };
-      pTotals[p.projectName].total += s;
-    }));
-    const s1 = [["No", "Project Number", "Project Name", "Total Menit", "Total Jam"]];
-    Object.entries(pTotals).sort((a, b) => b[1].total - a[1].total)
-      .forEach(([n, v], i) => s1.push([i + 1, v.number || "", n, v.total, +(v.total / 60).toFixed(2)]));
-
-    // Sheet 2: Per Hari
-    const s2 = [["Tanggal", "Hari", "Operasi (mnt)", "Non-Op (mnt)", "Total (mnt)", "Ratio", "Target", "Overtime", "Catatan"]];
-    for (let d = 1; d <= td; d++) {
-      const day = m.days[d];
-      if (!day || !hasDayData(day)) continue;
-      const op = day.operations.reduce((s, p) => s + Object.values(p.items).reduce((a, b) => a + (Number(b) || 0), 0), 0);
-      const non = Object.values(day.nonOperations).reduce((a, b) => a + (Number(b) || 0), 0);
-      const t = op + non, tgt = Number(day.target) || 480;
-      s2.push([d, dayName(currentPeriod, d), op, non, t, t > 0 ? +(op / t).toFixed(4) : 0, tgt, t - tgt, day.note || ""]);
-    }
-
-    // Sheet 3: Database (semua bulan)
-    const s3 = [["period", "day", "type", "project_number", "project_name", "item", "minutes", "target", "note"]];
-    Object.entries(DB.months).forEach(([period, mm]) => Object.entries(mm.days).forEach(([d, day]) => {
-      const tg = day.target || "";
-      day.operations.forEach(p => Object.entries(p.items).forEach(([item, min]) => {
-        if (Number(min) > 0) s3.push([period, +d, "OP", p.projectNumber || "", p.projectName, item, +min, tg, day.note || ""]);
-      }));
-      Object.entries(day.nonOperations).forEach(([item, min]) => {
-        if (Number(min) > 0) s3.push([period, +d, "NONOP", "", "", item, +min, tg, day.note || ""]);
-      });
-    }));
-
-    const sheets = [
-      { name: "Resume Project", data: s1 },
-      { name: "Per Hari",       data: s2 },
-      { name: "Database",       data: s3 }
-    ];
-
-    const bin = XlsxMini.writeSheets(sheets);
-    download(`Laporan_${DB.profile.name || "user"}_${currentPeriod}.xlsx`, bin,
+    const bin = XlsxMini.buildLaporan(DB, currentPeriod);
+    const [y, mn] = currentPeriod.split("-");
+    const mname = new Date(y, mn-1, 1).toLocaleDateString("id-ID", { month: "long" });
+    download(`Laporan_${DB.profile.name || "user"}_${mname}_${y}.xlsx`, bin,
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     toast("✅ Excel diunduh", "success");
-
   } catch (e) {
     console.error("XLSX error:", e);
     toast("❌ Gagal: " + e.message, "error");
