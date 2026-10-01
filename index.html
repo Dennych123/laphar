@@ -528,6 +528,33 @@
 <script src="lib/xlsx-mini.js"></script>
 <script src="lib/pdf-print.js"></script>
 
+<!-- Lokal: data dibaca/ditulis langsung ke laphar_data.txt lewat "Laphar Edit.bat" (laphar_bot.pyw --edit) -->
+<script>
+(function () {
+  const KEY = "laporan_harian_v1";
+  // Hanya di server lokal. Di github.io jangan pernah jalan: saat offline sw.js menjawab
+  // request apa pun dengan index.html (status 200), dan itu akan menimpa data.
+  if (location.hostname !== "127.0.0.1") return;
+  try {
+    const x = new XMLHttpRequest();
+    x.open("GET", "/data", false);
+    x.send();
+    if (x.status !== 200 || !JSON.parse(x.responseText).months) return;
+    localStorage.setItem(KEY, x.responseText);
+  } catch (e) { return; }  // server mati atau jawabannya bukan data: localStorage biasa
+  const setItem = Storage.prototype.setItem;
+  let sudahBilang = false;
+  const gagal = () => {
+    if (!sudahBilang) alert("GAGAL simpan ke laphar_data.txt.\nJalankan lagi Laphar Edit.bat, muat ulang halaman, lalu isi ulang.");
+    sudahBilang = true;
+  };
+  Storage.prototype.setItem = function (k, v) {
+    setItem.call(this, k, v);
+    if (k === KEY) fetch("/data", { method: "POST", body: v }).then(r => r.ok || gagal(), gagal);
+  };
+})();
+</script>
+
 <script src="app.js"></script>
 </body>
 </html>

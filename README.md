@@ -48,3 +48,13 @@ https://[username-kamu].github.io/laporan-harian/
 ## 🔒 Privasi
 Data tersimpan di browser HP Anda (localStorage). GitHub hanya menyimpan kode, bukan data laporan.
 Selalu export TXT sebagai backup sebelum ganti HP atau clear browser.
+
+## 🤖 Laphar Bot (Windows, opsional)
+Penagih laporan harian di laptop. Butuh Python 3, tanpa library tambahan.
+
+- `laphar_bot.pyw`: form klik yang muncul saat login kalau ada hari yang belum diisi.
+- `Laphar Bot.bat`: buka form secara manual (hari ini ikut bisa diisi).
+- `Laphar Edit.bat`: buka web app ini secara lokal; datanya langsung baca-tulis ke `laphar_data.txt`.
+
+Cara pasang: simpan backup TXT dari menu Export sebagai `laphar_data.txt` di folder ini, lalu jalankan `python laphar_bot.pyw --install`.
+`laphar_data.txt` tidak ikut di-commit (lihat `.gitignore`).
